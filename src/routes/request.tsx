@@ -1,14 +1,14 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Check, CheckCircle2, Upload, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -16,106 +16,141 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { PageHeader, Notice } from "@/components/site/Bits";
+import { PageHeader, Section } from "@/components/site/Bits";
+import { servicesQueryOptions } from "@/lib/services-query";
+import { submitServiceRequest } from "@/lib/site.functions";
+import { CLIENT_TYPES, CONTACT_METHODS } from "@/lib/statuses";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/request")({
   head: () => ({
     meta: [
-      { title: "تقديم طلب إصدار الوثيقة | ريفانس" },
+      { title: "اطلب خدمتك | ريفانس لخدمات التعقيب" },
       {
         name: "description",
-        content: "قدّم طلب إصدار وثيقة توثيق التجارة الإلكترونية عبر نموذج ريفانس خلال دقائق.",
+        content:
+          "قدّم طلب خدمة التعقيب لدى ريفانس: بياناتك، الخدمة المطلوبة، الجهة، وصف الطلب والمستندات.",
       },
-      { property: "og:title", content: "تقديم طلب إصدار الوثيقة | ريفانس" },
-      { property: "og:description", content: "نموذج متعدد الخطوات لتقديم طلب التوثيق بسهولة." },
+      { property: "og:title", content: "اطلب خدمتك | ريفانس" },
+      { property: "og:description", content: "نموذج طلب خدمات التعقيب وإنجاز المعاملات." },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    service: typeof search.service === "string" ? search.service : undefined,
+  }),
+  loader: ({ context }) => context.queryClient.ensureQueryData(servicesQueryOptions),
   component: RequestPage,
 });
 
-const stepTitles = [
-  "بيانات مقدم الطلب",
-  "بيانات المنشأة",
-  "بيانات المتجر الإلكتروني",
-  "الأنشطة المراد توثيقها",
-  "المستندات",
-  "المراجعة والموافقة",
-];
-
-const activities = [
-  { name: "تحصيل الديون", code: "829101", ok: true, supervisor: "—" },
-  { name: "أنشطة تجنب المعاملات", code: "829903", ok: true, supervisor: "—" },
-  { name: "البيع بالتجزئة عبر الإنترنت", code: "479101", ok: true, supervisor: "وزارة التجارة" },
-  { name: "أنشطة استشارية غير مصنفة", code: "702002", ok: false, supervisor: "جهة مختصة" },
-];
-
-const docs = [
-  "السجل التجاري",
-  "الهوية الوطنية أو الإقامة",
-  "التفويض (إذا كان مقدم الطلب غير المالك)",
-  "شعار المتجر (إن وجد)",
-  "أي تراخيص مرتبطة بالنشاط",
-  "مستندات إضافية",
-];
-
-const docStatuses = ["تم الرفع", "تحت المراجعة", "مطلوب تعديل", "معتمد"] as const;
-
-function Field({
-  label,
-  id,
-  type = "text",
-  value,
-  onChange,
-}: {
-  label: string;
-  id: string;
-  type?: string;
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={id}>{label}</Label>
-      <Input id={id} type={type} value={value} onChange={(e) => onChange(e.target.value)} maxLength={200} />
-    </div>
-  );
-}
+type Doc = { file_name: string; file_path: string };
 
 function RequestPage() {
-  const [step, setStep] = useState(0);
-  const [form, setForm] = useState<Record<string, string>>({});
-  const [selected, setSelected] = useState<string[]>([]);
-  const [uploaded, setUploaded] = useState<Record<string, string>>({});
-  const [storeVerified, setStoreVerified] = useState(false);
+  const { service } = Route.useSearch();
+  const navigate = useNavigate();
+  const { data: services } = useSuspenseQuery(servicesQueryOptions);
+  const submit = useServerFn(submitServiceRequest);
+
+  const [form, setForm] = useState({
+    full_name: "",
+    national_id: "",
+    phone: "",
+    email: "",
+    city: "",
+    client_type: "individual",
+    service_id: service ?? "",
+    entity_name: "",
+    transaction_number: "",
+    details: "",
+    preferred_contact: "phone",
+  });
+  const [docs, setDocs] = useState<Doc[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [agree, setAgree] = useState(false);
-  const [signature, setSignature] = useState("");
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [submitted, setSubmitted] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+  const [result, setResult] = useState<{ order_number: string; access_code: string } | null>(null);
 
-  const set = (k: string) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
-  const progress = useMemo(() => Math.round(((step + 1) / stepTitles.length) * 100), [step]);
+  const set = (k: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
 
-  if (submitted) {
+  async function handleFiles(files: FileList | null) {
+    if (!files?.length) return;
+    setUploading(true);
+    try {
+      const uploaded: Doc[] = [];
+      for (const file of Array.from(files).slice(0, 10 - docs.length)) {
+        if (file.size > 10 * 1024 * 1024) {
+          toast.error(`حجم الملف ${file.name} يتجاوز 10 ميجابايت.`);
+          continue;
+        }
+        const ext = file.name.split(".").pop() ?? "dat";
+        const path = `${crypto.randomUUID()}.${ext}`;
+        const { error } = await supabase.storage.from("request-documents").upload(path, file);
+        if (error) {
+          toast.error(`تعذر رفع الملف ${file.name}`);
+          continue;
+        }
+        uploaded.push({ file_name: file.name, file_path: path });
+      }
+      setDocs((d) => [...d, ...uploaded]);
+      if (uploaded.length) toast.success("تم رفع المستندات بنجاح.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.service_id) return toast.error("يرجى اختيار الخدمة المطلوبة.");
+    if (!agree) return toast.error("يرجى الموافقة على الشروط وسياسة الخصوصية.");
+    setSending(true);
+    try {
+      const res = await submit({ data: { ...form, documents: docs } as never });
+      setResult(res);
+      toast.success("تم استلام طلبك لدى ريفانس بنجاح، وسيتم التواصل معك بعد مراجعة البيانات.");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch {
+      toast.error("تعذر إرسال الطلب، يرجى التحقق من البيانات والمحاولة مرة أخرى.");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  if (result) {
     return (
       <>
-        <PageHeader title="تم استلام طلبك لدى ريفانس بنجاح." />
-        <div className="mx-auto max-w-xl px-4 py-14 text-center">
-          <CheckCircle2 className="mx-auto size-14 text-gold" />
-          <p className="mt-5 text-sm leading-8 text-muted-foreground">
-            رقم طلبك هو <span className="font-extrabold text-primary">{submitted}</span>، يمكنك
-            متابعة حالة الطلب من صفحة متابعة الطلب.
-          </p>
-        </div>
+        <PageHeader title="تم استلام طلبك" />
+        <Section className="max-w-2xl">
+          <div className="rounded-2xl border border-gold/40 bg-card p-8 text-center shadow-soft">
+            <CheckCircle2 className="mx-auto size-12 text-gold" />
+            <p className="mt-4 text-sm leading-8 text-foreground">
+              تم استلام طلبك لدى ريفانس بنجاح، وسيتم التواصل معك بعد مراجعة البيانات.
+            </p>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-border p-4">
+                <p className="text-xs text-muted-foreground">رقم الطلب</p>
+                <p className="mt-1 text-lg font-extrabold text-primary" dir="ltr">
+                  {result.order_number}
+                </p>
+              </div>
+              <div className="rounded-xl border border-border p-4">
+                <p className="text-xs text-muted-foreground">رمز التحقق</p>
+                <p className="mt-1 text-lg font-extrabold text-primary" dir="ltr">
+                  {result.access_code}
+                </p>
+              </div>
+            </div>
+            <p className="mt-4 text-xs leading-6 text-muted-foreground">
+              احتفظ برقم الطلب ورمز التحقق لمتابعة حالة طلبك.
+            </p>
+            <Button
+              variant="hero"
+              size="lg"
+              className="mt-6 w-full"
+              onClick={() => navigate({ to: "/track" })}
+            >
+              متابعة الطلب
+            </Button>
+          </div>
+        </Section>
       </>
     );
   }
@@ -123,331 +158,149 @@ function RequestPage() {
   return (
     <>
       <PageHeader
-        title="تقديم طلب إصدار الوثيقة"
-        sub="لا يستغرق تعبئة الطلب أكثر من عدة دقائق. جميع بياناتك محفوظة ومحمية لدى ريفانس."
+        title="اطلب خدمتك"
+        sub="عبّئ بيانات الطلب وارفق المستندات، وسيتواصل معك فريق ريفانس بعد المراجعة."
       />
+      <Section className="max-w-3xl">
+        <form onSubmit={onSubmit} className="rounded-2xl border border-border bg-card p-6 shadow-soft">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="الاسم الكامل" id="full_name" value={form.full_name} onChange={set("full_name")} required />
+            <Field label="رقم الهوية أو الإقامة" id="national_id" value={form.national_id} onChange={set("national_id")} required />
+            <Field label="رقم الجوال" id="phone" value={form.phone} onChange={set("phone")} required />
+            <Field label="البريد الإلكتروني" id="email" type="email" value={form.email} onChange={set("email")} />
+            <Field label="المدينة" id="city" value={form.city} onChange={set("city")} required />
 
-      <div className="mx-auto max-w-4xl px-4 py-10">
-        <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
-          <div className="flex items-center justify-between gap-3 text-sm">
-            <span className="font-bold text-primary">
-              الخطوة {step + 1} من {stepTitles.length}: {stepTitles[step]}
-            </span>
-            <span className="shrink-0 text-gold">{progress}%</span>
-          </div>
-          <Progress value={progress} className="mt-3" />
-          <div className="mt-4 flex flex-wrap gap-2">
-            {stepTitles.map((t, i) => (
-              <span
-                key={t}
-                className={`rounded-full border px-3 py-1 text-[11px] ${
-                  i <= step
-                    ? "border-gold bg-gold-soft text-primary"
-                    : "border-border text-muted-foreground"
-                }`}
-              >
-                {i + 1}. {t}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-soft">
-          {step === 0 && (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="الاسم الكامل" id="fullName" value={form.fullName ?? ""} onChange={set("fullName")} />
-              <Field label="رقم الهوية أو الإقامة" id="nid" value={form.nid ?? ""} onChange={set("nid")} />
-              <Field label="رقم الجوال" id="phone" value={form.phone ?? ""} onChange={set("phone")} />
-              <Field label="البريد الإلكتروني" id="email" type="email" value={form.email ?? ""} onChange={set("email")} />
-              <Field label="المدينة" id="city" value={form.city ?? ""} onChange={set("city")} />
-              <div className="space-y-2">
-                <Label>صفة مقدم الطلب</Label>
-                <Select value={form.role} onValueChange={set("role")}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر الصفة" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {["مالك المنشأة", "مفوض", "مدير المنشأة"].map((r) => (
-                      <SelectItem key={r} value={r}>
-                        {r}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          )}
-
-          {step === 1 && (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="اسم المنشأة" id="company" value={form.company ?? ""} onChange={set("company")} />
-              <Field label="الرقم الموحد للمنشأة" id="unified" value={form.unified ?? ""} onChange={set("unified")} />
-              <Field label="رقم السجل التجاري" id="cr" value={form.cr ?? ""} onChange={set("cr")} />
-              <Field label="تاريخ إصدار السجل" id="crStart" type="date" value={form.crStart ?? ""} onChange={set("crStart")} />
-              <Field label="تاريخ انتهاء السجل" id="crEnd" type="date" value={form.crEnd ?? ""} onChange={set("crEnd")} />
-              <div className="space-y-2">
-                <Label>نوع الكيان</Label>
-                <Select value={form.entity} onValueChange={set("entity")}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر نوع الكيان" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {["مؤسسة فردية", "شركة ذات مسؤولية محدودة", "شركة مساهمة", "أخرى"].map((r) => (
-                      <SelectItem key={r} value={r}>
-                        {r}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>حالة السجل التجاري</Label>
-                <Select value={form.crStatus} onValueChange={set("crStatus")}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر الحالة" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {["ساري", "منتهي", "موقوف"].map((r) => (
-                      <SelectItem key={r} value={r}>
-                        {r}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="crFile">رفع صورة السجل التجاري</Label>
-                <Input id="crFile" type="file" accept=".pdf,.jpg,.jpeg,.png" />
-              </div>
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="اسم المتجر الإلكتروني" id="storeName" value={form.storeName ?? ""} onChange={set("storeName")} />
-              <Field label="رابط المتجر الإلكتروني" id="storeUrl" value={form.storeUrl ?? ""} onChange={(v) => { setStoreVerified(false); set("storeUrl")(v); }} />
-              <Field label="روابط حسابات التواصل (إن وجدت)" id="social" value={form.social ?? ""} onChange={set("social")} />
-              <div className="space-y-2">
-                <Label>منصة المتجر</Label>
-                <Select value={form.platform} onValueChange={set("platform")}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر المنصة" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {["سلة", "زد", "شوبيفاي", "ووردبريس", "متجر مبرمج", "أخرى"].map((r) => (
-                      <SelectItem key={r} value={r}>
-                        {r}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="desc">وصف مختصر لنشاط المتجر</Label>
-                <Textarea id="desc" rows={4} maxLength={1000} value={form.desc ?? ""} onChange={(e) => set("desc")(e.target.value)} />
-              </div>
-              <div className="sm:col-span-2">
-                <Button
-                  type="button"
-                  variant="goldOutline"
-                  onClick={() => {
-                    if (!form.storeUrl) {
-                      toast.error("يرجى إدخال رابط المتجر أولًا.");
-                      return;
-                    }
-                    setStoreVerified(true);
-                    toast.success("تم التحقق من رابط المتجر بنجاح.");
-                  }}
-                >
-                  التحقق من رابط المتجر
-                </Button>
-                {storeVerified && (
-                  <p className="mt-3 flex items-center gap-2 text-sm font-semibold text-primary">
-                    <CheckCircle2 className="size-4 text-gold" /> تم التحقق من رابط المتجر بنجاح.
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {step === 3 && (
-            <div className="space-y-4">
-              <div className="grid gap-3 md:grid-cols-2">
-                {activities.map((a) => {
-                  const checked = selected.includes(a.code);
-                  return (
-                    <label
-                      key={a.code}
-                      className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors ${
-                        checked ? "border-gold bg-gold-soft/40" : "border-border bg-card"
-                      } ${a.ok ? "" : "opacity-60"}`}
-                    >
-                      <Checkbox
-                        checked={checked}
-                        disabled={!a.ok}
-                        onCheckedChange={(v) =>
-                          setSelected((s) => (v ? [...s, a.code] : s.filter((c) => c !== a.code)))
-                        }
-                        className="mt-1"
-                      />
-                      <span className="min-w-0">
-                        <span className="block text-sm font-bold text-primary">{a.name}</span>
-                        <span className="mt-1 block text-xs text-muted-foreground">
-                          رمز النشاط: {a.code}
-                        </span>
-                        <span className="mt-2 flex flex-wrap items-center gap-2">
-                          <Badge variant={a.ok ? "default" : "secondary"}>
-                            {a.ok ? "قابل للتوثيق" : "غير قابل للتوثيق"}
-                          </Badge>
-                          <span className="text-[11px] text-muted-foreground">
-                            الجهات المشرفة: {a.supervisor}
-                          </span>
-                        </span>
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
-              <Notice>
-                يتم عرض الأنشطة وفقًا للبيانات التي يقدمها العميل، وتخضع الموافقة النهائية للتحقق من
-                الجهة الرسمية.
-              </Notice>
-            </div>
-          )}
-
-          {step === 4 && (
-            <div className="space-y-3">
-              <p className="text-xs text-muted-foreground">الصيغ المقبولة: PDF، JPG، PNG</p>
-              {docs.map((d) => (
-                <div
-                  key={d}
-                  className="grid gap-3 rounded-xl border border-border p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-primary">{d}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      الحالة: {uploaded[d] ?? "لم يتم الرفع"}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <Input
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      className="max-w-[190px]"
-                      onChange={() =>
-                        setUploaded((u) => ({ ...u, [d]: docStatuses[0] }))
-                      }
-                    />
-                    <Upload className="size-4 text-gold" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {step === 5 && (
-            <div className="space-y-5">
-              <div className="rounded-xl border border-border p-4">
-                <h3 className="text-sm font-extrabold text-primary">ملخص الطلب</h3>
-                <dl className="mt-3 grid gap-2 sm:grid-cols-2">
-                  {[
-                    ["الاسم الكامل", form.fullName],
-                    ["رقم الهوية", form.nid],
-                    ["الجوال", form.phone],
-                    ["البريد الإلكتروني", form.email],
-                    ["المنشأة", form.company],
-                    ["السجل التجاري", form.cr],
-                    ["المتجر", form.storeName],
-                    ["رابط المتجر", form.storeUrl],
-                    ["المنصة", form.platform],
-                    ["الأنشطة المختارة", selected.join("، ")],
-                  ].map(([k, v]) => (
-                    <div key={k} className="flex min-w-0 gap-2 text-sm">
-                      <dt className="shrink-0 text-muted-foreground">{k}:</dt>
-                      <dd className="min-w-0 truncate font-medium text-foreground">{v || "—"}</dd>
-                    </div>
+            <div className="space-y-2">
+              <Label>نوع العميل</Label>
+              <Select value={form.client_type} onValueChange={set("client_type")}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CLIENT_TYPES.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      {c.label}
+                    </SelectItem>
                   ))}
-                </dl>
-              </div>
-
-              <label className="flex items-start gap-3 rounded-xl border border-gold/40 bg-gold-soft/30 p-4">
-                <Checkbox checked={agree} onCheckedChange={(v) => setAgree(Boolean(v))} className="mt-1" />
-                <span className="text-xs leading-7 text-primary">
-                  أقر بصحة البيانات والمستندات المقدمة، وأفوض مقدم الخدمة في متابعة وتنفيذ إجراءات
-                  طلب إصدار وثيقة توثيق التجارة الإلكترونية من خلال المنصات الرسمية، وأوافق على
-                  سياسة الخصوصية والشروط والأحكام.
-                </span>
-              </label>
-
-              <div className="space-y-2">
-                <Label htmlFor="sig">التوقيع الإلكتروني (اكتب اسمك الكامل)</Label>
-                <Input id="sig" value={signature} onChange={(e) => setSignature(e.target.value)} maxLength={100} />
-              </div>
-
-              <Notice>
-                ريفانس مقدم خدمات تعقيب مستقل، ولا يمثل أي جهة حكومية. رسوم التعقيب مستقلة عن أي
-                رسوم حكومية.
-              </Notice>
+                </SelectContent>
+              </Select>
             </div>
-          )}
 
-          <div className="mt-7 flex flex-wrap items-center justify-between gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={step === 0}
-              onClick={() => setStep((s) => Math.max(0, s - 1))}
-            >
-              السابق
-            </Button>
+            <div className="space-y-2 sm:col-span-2">
+              <Label>الخدمة المطلوبة</Label>
+              <Select value={form.service_id} onValueChange={set("service_id")}>
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر الخدمة" />
+                </SelectTrigger>
+                <SelectContent>
+                  {services.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-            {step < stepTitles.length - 1 ? (
-              <Button type="button" variant="hero" onClick={() => setStep((s) => s + 1)}>
-                التالي
-              </Button>
-            ) : (
-              <Button
-                type="button"
-                variant="gold"
-                onClick={() => {
-                  if (!agree) return toast.error("يرجى الموافقة على الإقرار والتفويض.");
-                  if (!signature.trim()) return toast.error("يرجى إدخال التوقيع الإلكتروني.");
-                  setConfirmOpen(true);
-                }}
-              >
-                إرسال الطلب والدفع
-              </Button>
-            )}
+            <Field label="اسم الجهة المرتبطة بالمعاملة" id="entity_name" value={form.entity_name} onChange={set("entity_name")} />
+            <Field label="رقم المعاملة (إن وجد)" id="transaction_number" value={form.transaction_number} onChange={set("transaction_number")} />
+
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="details">وصف الطلب</Label>
+              <Textarea
+                id="details"
+                rows={5}
+                maxLength={2000}
+                value={form.details}
+                onChange={(e) => set("details")(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
+              <Label>المستندات</Label>
+              <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted/40 p-6 text-sm text-muted-foreground hover:border-gold">
+                <Upload className="size-4" />
+                {uploading ? "جارٍ الرفع..." : "اختر الملفات (PDF أو صور، حتى 10 ميجابايت للملف)"}
+                <input
+                  type="file"
+                  multiple
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  className="hidden"
+                  disabled={uploading}
+                  onChange={(e) => handleFiles(e.target.files)}
+                />
+              </label>
+              {docs.length > 0 && (
+                <ul className="space-y-2">
+                  {docs.map((d) => (
+                    <li
+                      key={d.file_path}
+                      className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2 text-sm"
+                    >
+                      <span className="truncate">{d.file_name}</span>
+                      <button
+                        type="button"
+                        aria-label="حذف الملف"
+                        onClick={() => setDocs((x) => x.filter((f) => f.file_path !== d.file_path))}
+                      >
+                        <X className="size-4 text-muted-foreground" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
+              <Label>طريقة التواصل المفضلة</Label>
+              <Select value={form.preferred_contact} onValueChange={set("preferred_contact")}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CONTACT_METHODS.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      {c.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        </div>
 
-        <p className="mt-6 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-          <ShieldCheck className="size-4 text-gold" /> بياناتك مشفّرة ومحفوظة لدى ريفانس.
-        </p>
-      </div>
+          <label className="mt-6 flex items-start gap-3 text-sm leading-7 text-foreground">
+            <Checkbox checked={agree} onCheckedChange={(v) => setAgree(Boolean(v))} className="mt-1" />
+            <span>أوافق على الشروط والأحكام وسياسة الخصوصية الخاصة بريفانس.</span>
+          </label>
 
-      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent dir="rtl">
-          <AlertDialogHeader>
-            <AlertDialogTitle>تأكيد إرسال الطلب</AlertDialogTitle>
-            <AlertDialogDescription>
-              سيتم إرسال طلبك إلى فريق ريفانس والانتقال إلى صفحة الدفع. هل تريد المتابعة؟
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>إلغاء</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                const id = `RV-${Date.now().toString().slice(-8)}`;
-                setSubmitted(id);
-                toast.success("تم استلام طلبك لدى ريفانس بنجاح.");
-              }}
-            >
-              <Check className="size-4" /> تأكيد وإرسال
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+          <Button type="submit" variant="hero" size="lg" className="mt-6 w-full" disabled={sending || uploading}>
+            {sending ? "جارٍ الإرسال..." : "إرسال الطلب"}
+          </Button>
+        </form>
+      </Section>
     </>
+  );
+}
+
+function Field({
+  label,
+  id,
+  value,
+  onChange,
+  type = "text",
+  required,
+}: {
+  label: string;
+  id: string;
+  value: string;
+  onChange: (v: string) => void;
+  type?: string;
+  required?: boolean;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>{label}</Label>
+      <Input id={id} type={type} value={value} required={required} onChange={(e) => onChange(e.target.value)} />
+    </div>
   );
 }
