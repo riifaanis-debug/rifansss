@@ -80,17 +80,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "ريفانس | خدمات توثيق التجارة الإلكترونية" },
+      { title: "ريفانس لخدمات التعقيب | إنجاز ومتابعة المعاملات" },
       {
         name: "description",
         content:
-          "ريفانس مقدم خدمات تعقيب مستقل لتجهيز ومتابعة إصدار وثيقة توثيق التجارة الإلكترونية للمنشآت والمتاجر.",
+          "ريفانس منشأة متخصصة في خدمات التعقيب وإنجاز المعاملات للأفراد والمنشآت مع متابعة دقيقة حتى الإغلاق.",
       },
       { name: "author", content: "ريفانس" },
-      { property: "og:title", content: "ريفانس | خدمات توثيق التجارة الإلكترونية" },
+      { property: "og:title", content: "ريفانس لخدمات التعقيب" },
       {
         property: "og:description",
-        content: "تجهيز ومتابعة طلب إصدار وثيقة توثيق التجارة الإلكترونية بسهولة وسرعة.",
+        content: "ننجز معاملاتك بسهولة واحترافية مع متابعة مستمرة حتى إغلاق الطلب.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
