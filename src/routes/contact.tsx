@@ -2,14 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Mail, Phone, MessageCircle, MapPin, Clock, Instagram, Twitter, Linkedin } from "lucide-react";
+import { Mail, Phone, MessageCircle, MapPin, Clock, Headset, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHeader, Section } from "@/components/site/Bits";
 import { submitContactMessage } from "@/lib/site.functions";
-import { CONTACT_INFO } from "@/lib/content";
+import { CONTACT_INFO, SOCIAL_LINKS } from "@/lib/content";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -83,9 +83,12 @@ function ContactPage() {
           <div className="space-y-3">
             {[
               { icon: Phone, label: "الجوال", value: CONTACT_INFO.phone, ltr: true },
+              { icon: Phone, label: "الهاتف", value: CONTACT_INFO.mobile, ltr: true },
+              { icon: Headset, label: "خدمة العملاء", value: CONTACT_INFO.support, ltr: true },
               { icon: MessageCircle, label: "واتساب", value: CONTACT_INFO.whatsapp, ltr: true },
               { icon: Mail, label: "البريد الإلكتروني", value: CONTACT_INFO.email, ltr: true },
-              { icon: MapPin, label: "المدينة", value: CONTACT_INFO.city },
+              { icon: Globe, label: "الموقع الإلكتروني", value: CONTACT_INFO.website, ltr: true },
+              { icon: MapPin, label: "العنوان", value: `${CONTACT_INFO.city} — ${CONTACT_INFO.address}` },
               { icon: Clock, label: "ساعات العمل", value: CONTACT_INFO.hours },
             ].map((c) => (
               <div key={c.label} className="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
@@ -102,21 +105,17 @@ function ContactPage() {
             ))}
             <div className="rounded-xl border border-border bg-card p-4">
               <p className="text-xs text-muted-foreground">حسابات التواصل الاجتماعي</p>
-              <div className="mt-3 flex gap-2">
-                {[
-                  { icon: Twitter, label: "X", href: "https://x.com" },
-                  { icon: Instagram, label: "Instagram", href: "https://instagram.com" },
-                  { icon: Linkedin, label: "LinkedIn", href: "https://linkedin.com" },
-                ].map((s) => (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {SOCIAL_LINKS.map((s) => (
                   <a
                     key={s.label}
                     href={s.href}
                     target="_blank"
                     rel="noreferrer"
                     aria-label={s.label}
-                    className="grid size-10 place-items-center rounded-lg border border-border text-primary hover:bg-gold-soft"
+                    className="rounded-lg border border-border px-3 py-2 text-xs font-bold text-primary hover:bg-gold-soft"
                   >
-                    <s.icon className="size-4" />
+                    {s.label}
                   </a>
                 ))}
               </div>
