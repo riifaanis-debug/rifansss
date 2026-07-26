@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 
 const nav = [
   { to: "/", label: "الرئيسية" },
-  { to: "/request", label: "إصدار وثيقة التجارة الإلكترونية" },
-  { to: "/requirements", label: "متطلبات الخدمة" },
-  { to: "/track", label: "متابعة الطلب" },
+  { to: "/services", label: "خدماتنا" },
+  { to: "/about", label: "من نحن" },
+  { to: "/how-it-works", label: "آلية العمل" },
   { to: "/faq", label: "الأسئلة الشائعة" },
   { to: "/contact", label: "تواصل معنا" },
 ] as const;
@@ -25,7 +25,7 @@ export function SiteHeader() {
           <span className="min-w-0">
             <span className="block truncate text-base font-extrabold text-primary">ريفانس</span>
             <span className="block truncate text-[11px] text-muted-foreground">
-              خدمات توثيق التجارة الإلكترونية
+              خدمات التعقيب وإنجاز المعاملات
             </span>
           </span>
         </Link>
@@ -47,7 +47,7 @@ export function SiteHeader() {
 
         <div className="flex shrink-0 items-center gap-2">
           <Button asChild variant="hero" className="hidden sm:inline-flex">
-            <Link to="/request">ابدأ طلبك الآن</Link>
+            <Link to="/request">اطلب خدمة</Link>
           </Button>
           <Button
             variant="ghost"
@@ -78,7 +78,7 @@ export function SiteHeader() {
           </ul>
           <Button asChild variant="hero" className="mt-3 w-full">
             <Link to="/request" onClick={() => setOpen(false)}>
-              ابدأ طلبك الآن
+              اطلب خدمة
             </Link>
           </Button>
         </nav>

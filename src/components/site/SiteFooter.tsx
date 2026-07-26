@@ -2,9 +2,10 @@ import { Link } from "@tanstack/react-router";
 import { Mail, Phone, MessageCircle, CreditCard } from "lucide-react";
 
 const pages = [
+  { to: "/services", label: "خدماتنا" },
   { to: "/about", label: "من نحن" },
-  { to: "/service", label: "تفاصيل الخدمة" },
-  { to: "/requirements", label: "متطلبات إصدار الوثيقة" },
+  { to: "/how-it-works", label: "آلية العمل" },
+  { to: "/request", label: "اطلب خدمتك" },
   { to: "/faq", label: "الأسئلة الشائعة" },
   { to: "/track", label: "متابعة الطلب" },
 ] as const;
@@ -22,10 +23,12 @@ export function SiteFooter() {
     <footer className="mt-20 surface-royal">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 md:grid-cols-2 lg:grid-cols-4">
         <div>
-          <h3 className="text-lg font-extrabold text-gold">ريفانس</h3>
+          <h3 className="text-lg font-extrabold text-gold">
+            ريفانس لخدمات التعقيب وإنجاز المعاملات
+          </h3>
           <p className="mt-3 text-sm leading-7 text-primary-foreground/80">
-            ريفانس مقدم خدمات تعقيب مستقل، ولا يمثل أي جهة حكومية. تخضع الموافقة على الطلب وإصدار
-            الوثيقة للأنظمة والمتطلبات والقرارات الصادرة عن الجهات الرسمية المختصة.
+            ريفانس مقدم خدمات تعقيب مستقل، ولا يمثل أي جهة حكومية. تخضع المعاملات للموافقات
+            والمتطلبات والأنظمة الخاصة بالجهات المختصة.
           </p>
           <p className="mt-4 text-xs text-primary-foreground/70">
             السجل التجاري: 1010XXXXXX — الرقم الضريبي: 3000XXXXXXXXXX3
