@@ -14,16 +14,240 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      contact_messages: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          is_read: boolean
+          message: string
+          name: string
+          phone: string
+          subject: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_read?: boolean
+          message: string
+          name: string
+          phone: string
+          subject?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_read?: boolean
+          message?: string
+          name?: string
+          phone?: string
+          subject?: string | null
+        }
+        Relationships: []
+      }
+      request_documents: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_path: string
+          id: string
+          request_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_path: string
+          id?: string
+          request_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "request_documents_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_requests: {
+        Row: {
+          access_code: string
+          admin_notes: string | null
+          assigned_to: string | null
+          city: string
+          client_type: Database["public"]["Enums"]["client_type"]
+          created_at: string
+          details: string | null
+          email: string | null
+          entity_name: string | null
+          full_name: string
+          id: string
+          invoice_amount: number | null
+          invoice_paid: boolean
+          national_id: string
+          order_number: string
+          phone: string
+          preferred_contact: string
+          required_documents: string | null
+          service_id: string | null
+          service_title: string
+          status: Database["public"]["Enums"]["request_status"]
+          transaction_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_code: string
+          admin_notes?: string | null
+          assigned_to?: string | null
+          city: string
+          client_type?: Database["public"]["Enums"]["client_type"]
+          created_at?: string
+          details?: string | null
+          email?: string | null
+          entity_name?: string | null
+          full_name: string
+          id?: string
+          invoice_amount?: number | null
+          invoice_paid?: boolean
+          national_id: string
+          order_number: string
+          phone: string
+          preferred_contact?: string
+          required_documents?: string | null
+          service_id?: string | null
+          service_title: string
+          status?: Database["public"]["Enums"]["request_status"]
+          transaction_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_code?: string
+          admin_notes?: string | null
+          assigned_to?: string | null
+          city?: string
+          client_type?: Database["public"]["Enums"]["client_type"]
+          created_at?: string
+          details?: string | null
+          email?: string | null
+          entity_name?: string | null
+          full_name?: string
+          id?: string
+          invoice_amount?: number | null
+          invoice_paid?: boolean
+          national_id?: string
+          order_number?: string
+          phone?: string
+          preferred_contact?: string
+          required_documents?: string | null
+          service_id?: string | null
+          service_title?: string
+          status?: Database["public"]["Enums"]["request_status"]
+          transaction_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_requests_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      services: {
+        Row: {
+          created_at: string
+          description: string
+          icon: string
+          id: string
+          is_active: boolean
+          price: number | null
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          price?: number | null
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          price?: number | null
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "staff"
+      client_type: "individual" | "establishment" | "company"
+      request_status:
+        | "new"
+        | "under_review"
+        | "needs_info"
+        | "awaiting_payment"
+        | "in_progress"
+        | "following_up"
+        | "completed"
+        | "cancelled"
+        | "failed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +374,20 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "staff"],
+      client_type: ["individual", "establishment", "company"],
+      request_status: [
+        "new",
+        "under_review",
+        "needs_info",
+        "awaiting_payment",
+        "in_progress",
+        "following_up",
+        "completed",
+        "cancelled",
+        "failed",
+      ],
+    },
   },
 } as const
