@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { Mail, Phone, MessageCircle, CreditCard } from "lucide-react";
+import { Mail, Phone, MessageCircle, CreditCard, MapPin, Headset } from "lucide-react";
+import { CONTACT_INFO, COMPANY_INFO } from "@/lib/content";
 
 const pages = [
   { to: "/services", label: "خدماتنا" },
@@ -30,8 +31,11 @@ export function SiteFooter() {
             ريفانس مقدم خدمات تعقيب مستقل، ولا يمثل أي جهة حكومية. تخضع المعاملات للموافقات
             والمتطلبات والأنظمة الخاصة بالجهات المختصة.
           </p>
-          <p className="mt-4 text-xs text-primary-foreground/70">
-            السجل التجاري: 1010XXXXXX — الرقم الضريبي: 3000XXXXXXXXXX3
+          <p className="mt-4 text-xs leading-6 text-primary-foreground/70">
+            السجل التجاري: {COMPANY_INFO.crNumber} — الرقم الوطني الموحد:{" "}
+            {COMPANY_INFO.unifiedNumber}
+            <br />
+            عضوية {COMPANY_INFO.chamberName}: {COMPANY_INFO.chamberMembership}
           </p>
         </div>
 
@@ -66,15 +70,29 @@ export function SiteFooter() {
           <ul className="mt-4 space-y-3 text-sm text-primary-foreground/80">
             <li className="flex items-center gap-2">
               <Phone className="size-4 shrink-0 text-gold" />
-              <span dir="ltr">+966 55 000 0000</span>
+              <span dir="ltr">{CONTACT_INFO.phone}</span>
             </li>
             <li className="flex items-center gap-2">
               <MessageCircle className="size-4 shrink-0 text-gold" />
-              <span dir="ltr">+966 55 000 0000</span>
+              <a href={CONTACT_INFO.whatsappUrl} target="_blank" rel="noreferrer" dir="ltr" className="hover:text-gold">
+                {CONTACT_INFO.whatsapp}
+              </a>
+            </li>
+            <li className="flex items-center gap-2">
+              <Headset className="size-4 shrink-0 text-gold" />
+              <span dir="ltr">{CONTACT_INFO.support}</span>
             </li>
             <li className="flex items-center gap-2">
               <Mail className="size-4 shrink-0 text-gold" />
-              <span dir="ltr">info@rivance.sa</span>
+              <span dir="ltr">{CONTACT_INFO.email}</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <MapPin className="mt-0.5 size-4 shrink-0 text-gold" />
+              <span className="leading-6">
+                {CONTACT_INFO.city}
+                <br />
+                {CONTACT_INFO.address}
+              </span>
             </li>
           </ul>
           <div className="mt-5 flex flex-wrap gap-2 text-[11px] text-primary-foreground/80">
