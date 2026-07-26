@@ -1,45 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { z } from "zod";
-
-const serviceSchema = z.object({
-  id: z.string().uuid().optional(),
-  title: z.string().trim().min(2).max(160),
-  description: z.string().trim().max(600).default(""),
-  icon: z.string().trim().max(40).default("FileText"),
-  price: z.number().nonnegative().nullable().optional(),
-  sort_order: z.number().int().min(0).max(999).default(0),
-  is_active: z.boolean().default(true),
-});
-
-const updateRequestSchema = z.object({
-  id: z.string().uuid(),
-  status: z.enum([
-    "new",
-    "under_review",
-    "needs_info",
-    "awaiting_payment",
-    "in_progress",
-    "following_up",
-    "completed",
-    "cancelled",
-    "failed",
-  ]),
-  admin_notes: z.string().max(2000).optional().or(z.literal("")),
-  required_documents: z.string().max(1000).optional().or(z.literal("")),
-  assigned_to: z.string().max(120).optional().or(z.literal("")),
-  invoice_amount: z.number().nonnegative().nullable().optional(),
-  invoice_paid: z.boolean().default(false),
-});
-
-async function assertAdmin(context: { supabase: any; userId: string }) {
-  const { data, error } = await context.supabase.rpc("has_role", {
-    _user_id: context.userId,
-    _role: "admin",
-  });
-  if (error) throw new Error(error.message);
-  if (!data) throw new Error("Forbidden");
-}
+import { serviceSchema, updateRequestSchema, idSchema, pathSchema } from "@/lib/schemas";
 
 export const checkIsAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -54,7 +15,11 @@ export const checkIsAdmin = createServerFn({ method: "GET" })
 export const adminOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertAdmin(context);
+    const { data: allowed } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!allowed) throw new Error("Forbidden");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const [requests, services, messages] = await Promise.all([
       supabaseAdmin
@@ -84,7 +49,11 @@ export const adminUpdateRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => updateRequestSchema.parse(data))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context);
+    const { data: allowed } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!allowed) throw new Error("Forbidden");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("service_requests")
@@ -105,7 +74,11 @@ export const adminSaveService = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => serviceSchema.parse(data))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context);
+    const { data: allowed } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!allowed) throw new Error("Forbidden");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const payload = {
       title: data.title,
@@ -124,9 +97,13 @@ export const adminSaveService = createServerFn({ method: "POST" })
 
 export const adminDeleteService = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
+  .inputValidator((data: unknown) => idSchema.parse(data))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context);
+    const { data: allowed } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!allowed) throw new Error("Forbidden");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("services").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
@@ -135,9 +112,13 @@ export const adminDeleteService = createServerFn({ method: "POST" })
 
 export const adminDocumentUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => z.object({ path: z.string().max(400) }).parse(data))
+  .inputValidator((data: unknown) => pathSchema.parse(data))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context);
+    const { data: allowed } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!allowed) throw new Error("Forbidden");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: signed, error } = await supabaseAdmin.storage
       .from("request-documents")
@@ -148,9 +129,13 @@ export const adminDocumentUrl = createServerFn({ method: "POST" })
 
 export const adminMarkMessageRead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
+  .inputValidator((data: unknown) => idSchema.parse(data))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context);
+    const { data: allowed } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!allowed) throw new Error("Forbidden");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("contact_messages")

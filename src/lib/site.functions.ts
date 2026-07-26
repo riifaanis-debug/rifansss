@@ -1,37 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { z } from "zod";
-
-const requestSchema = z.object({
-  full_name: z.string().trim().min(3).max(120),
-  national_id: z.string().trim().min(5).max(20),
-  phone: z.string().trim().min(8).max(20),
-  email: z.string().trim().email().max(160).optional().or(z.literal("")),
-  city: z.string().trim().min(2).max(80),
-  client_type: z.enum(["individual", "establishment", "company"]),
-  service_id: z.string().uuid(),
-  entity_name: z.string().trim().max(160).optional().or(z.literal("")),
-  transaction_number: z.string().trim().max(80).optional().or(z.literal("")),
-  details: z.string().trim().max(2000).optional().or(z.literal("")),
-  preferred_contact: z.enum(["phone", "whatsapp", "email"]),
-  documents: z
-    .array(z.object({ file_name: z.string().max(200), file_path: z.string().max(400) }))
-    .max(10)
-    .default([]),
-});
-
-const contactSchema = z.object({
-  name: z.string().trim().min(3).max(120),
-  phone: z.string().trim().min(8).max(20),
-  email: z.string().trim().email().max(160).optional().or(z.literal("")),
-  subject: z.string().trim().max(160).optional().or(z.literal("")),
-  message: z.string().trim().min(5).max(2000),
-});
-
-const trackSchema = z.object({
-  order_number: z.string().trim().min(4).max(40),
-  phone: z.string().trim().min(8).max(20),
-  access_code: z.string().trim().min(4).max(12),
-});
+import { requestSchema, contactSchema, trackSchema } from "@/lib/schemas";
 
 export const listServices = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
