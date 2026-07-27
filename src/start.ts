@@ -39,8 +39,8 @@ const domainVerificationMiddleware = createMiddleware().server(async ({ next }) 
   if (!contentType.includes("text/html")) return result;
 
   const html = await response.text();
-  const headIndex = html.indexOf("<head>");
-  if (headIndex === -1) {
+  const headMatch = /<head[^>]*>/i.exec(html);
+  if (!headMatch) {
     return new Response(html, {
       status: response.status,
       statusText: response.statusText,
@@ -52,7 +52,9 @@ const domainVerificationMiddleware = createMiddleware().server(async ({ next }) 
     /<meta name="domain-verification"[^>]*>/i,
     "",
   );
-  const insertAt = withoutDuplicate.indexOf("<head>") + "<head>".length;
+  const reMatch = /<head[^>]*>/i.exec(withoutDuplicate);
+  if (!reMatch) return result;
+  const insertAt = reMatch.index + reMatch[0].length;
   const patched =
     withoutDuplicate.slice(0, insertAt) +
     DOMAIN_VERIFICATION_META +
