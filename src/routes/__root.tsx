@@ -80,20 +80,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "ريفانس لخدمات التعقيب | إنجاز ومتابعة المعاملات" },
+      { title: "ريفانس لخدمات التعقيب | ننجز معاملاتك بسهولة واحترافية" },
       {
         name: "description",
         content:
-          "ريفانس منشأة متخصصة في خدمات التعقيب وإنجاز المعاملات للأفراد والمنشآت مع متابعة دقيقة حتى الإغلاق.",
+          "ريفانس لخدمات التعقيب: تجهيز ومتابعة المعاملات وإنجاز الإجراءات لدى الجهات والمنصات ذات العلاقة بآلية عمل واضحة ومتابعة مستمرة.",
       },
       { name: "author", content: "ريفانس" },
-      { property: "og:title", content: "ريفانس لخدمات التعقيب" },
+      { property: "og:title", content: "ريفانس لخدمات التعقيب | ننجز معاملاتك بسهولة واحترافية" },
       {
         property: "og:description",
-        content: "ننجز معاملاتك بسهولة واحترافية مع متابعة مستمرة حتى إغلاق الطلب.",
+        content: "ريفانس لخدمات التعقيب: تجهيز ومتابعة المعاملات وإنجاز الإجراءات لدى الجهات والمنصات ذات العلاقة بآلية عمل واضحة ومتابعة مستمرة.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "ريفانس لخدمات التعقيب | ننجز معاملاتك بسهولة واحترافية" },
+      { name: "twitter:description", content: "ريفانس لخدمات التعقيب: تجهيز ومتابعة المعاملات وإنجاز الإجراءات لدى الجهات والمنصات ذات العلاقة بآلية عمل واضحة ومتابعة مستمرة." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c01a44e4-f7ad-4de4-8c63-29af080b8444/id-preview-4c54ff8e--f2a5a284-8581-4768-ba89-f1afe12a0a6f.lovable.app-1785174182399.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c01a44e4-f7ad-4de4-8c63-29af080b8444/id-preview-4c54ff8e--f2a5a284-8581-4768-ba89-f1afe12a0a6f.lovable.app-1785174182399.png" },
     ],
     links: [
       {
