@@ -16,7 +16,7 @@ export const CONTACT_INFO = {
   whatsapp: "+966 55 355 0496",
   whatsappUrl: "https://wa.me/message/HFAR3C6PQLD4P1",
   email: "rifanis@hotmail.com",
-  website: "https://rifanss.com",
+  website: "https://www.rifanss.com",
   city: "الطائف، المملكة العربية السعودية",
   address: "حي الأخباب، شارع حسان ابن وبره، مبنى 7750، الرمز البريدي 26724",
   shortAddress: "TIDC7750",
