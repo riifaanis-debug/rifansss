@@ -28,7 +28,7 @@ const csrfMiddleware = createCsrfMiddleware({
 // Some verification crawlers only read the very beginning of <head>.
 // Force the domain-verification meta to be the first tag inside <head>.
 const DOMAIN_VERIFICATION_META =
-  '<meta name="domain-verification" content="d0313daa0417c5da8b4c6846b8914d6b7b84bfa2e860117c2acc72b71dcbef2e">';
+  '<meta name="domain-verification" content="014e3e46f9fd1030b96606368d10b999ee407e71b02e151555be1d51d8447cb4">';
 
 const domainVerificationMiddleware = createMiddleware().server(async ({ next }) => {
   const result = await next();
