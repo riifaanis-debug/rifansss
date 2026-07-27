@@ -1,24 +1,19 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { isAdminUser } from "@/lib/admin-guard";
 import { serviceSchema, updateRequestSchema, idSchema, pathSchema } from "@/lib/schemas";
 
 export const checkIsAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    return { isAdmin: Boolean(data) };
+    const allowed = await isAdminUser(context.supabase, context.userId);
+    return { isAdmin: allowed };
   });
 
 export const adminOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: allowed } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
+    const allowed = await isAdminUser(context.supabase, context.userId);
     if (!allowed) throw new Error("Forbidden");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const [requests, services, messages] = await Promise.all([
@@ -49,10 +44,7 @@ export const adminUpdateRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => updateRequestSchema.parse(data))
   .handler(async ({ data, context }) => {
-    const { data: allowed } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
+    const allowed = await isAdminUser(context.supabase, context.userId);
     if (!allowed) throw new Error("Forbidden");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
@@ -74,10 +66,7 @@ export const adminSaveService = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => serviceSchema.parse(data))
   .handler(async ({ data, context }) => {
-    const { data: allowed } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
+    const allowed = await isAdminUser(context.supabase, context.userId);
     if (!allowed) throw new Error("Forbidden");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const payload = {
@@ -99,10 +88,7 @@ export const adminDeleteService = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => idSchema.parse(data))
   .handler(async ({ data, context }) => {
-    const { data: allowed } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
+    const allowed = await isAdminUser(context.supabase, context.userId);
     if (!allowed) throw new Error("Forbidden");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("services").delete().eq("id", data.id);
@@ -114,10 +100,7 @@ export const adminDocumentUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => pathSchema.parse(data))
   .handler(async ({ data, context }) => {
-    const { data: allowed } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
+    const allowed = await isAdminUser(context.supabase, context.userId);
     if (!allowed) throw new Error("Forbidden");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: signed, error } = await supabaseAdmin.storage
@@ -131,10 +114,7 @@ export const adminMarkMessageRead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => idSchema.parse(data))
   .handler(async ({ data, context }) => {
-    const { data: allowed } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
+    const allowed = await isAdminUser(context.supabase, context.userId);
     if (!allowed) throw new Error("Forbidden");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin

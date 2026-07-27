@@ -18,9 +18,19 @@ import {
 } from "@/components/ui/select";
 import { PageHeader, Section } from "@/components/site/Bits";
 import { servicesQueryOptions } from "@/lib/services-query";
-import { submitServiceRequest } from "@/lib/site.functions";
+import { submitServiceRequest, uploadRequestDocument } from "@/lib/site.functions";
 import { CLIENT_TYPES, CONTACT_METHODS } from "@/lib/statuses";
-import { supabase } from "@/integrations/supabase/client";
+
+const ALLOWED_TYPES = ["application/pdf", "image/jpeg", "image/png", "image/webp"];
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(",")[1] ?? "");
+    reader.onerror = () => reject(new Error("read error"));
+    reader.readAsDataURL(file);
+  });
+}
 
 export const Route = createFileRoute("/request")({
   head: () => ({
@@ -49,6 +59,7 @@ function RequestPage() {
   const navigate = useNavigate();
   const { data: services } = useSuspenseQuery(servicesQueryOptions);
   const submit = useServerFn(submitServiceRequest);
+  const uploadDoc = useServerFn(uploadRequestDocument);
 
   const [form, setForm] = useState({
     full_name: "",
@@ -81,14 +92,19 @@ function RequestPage() {
           toast.error(`حجم الملف ${file.name} يتجاوز 10 ميجابايت.`);
           continue;
         }
-        const ext = file.name.split(".").pop() ?? "dat";
-        const path = `${crypto.randomUUID()}.${ext}`;
-        const { error } = await supabase.storage.from("request-documents").upload(path, file);
-        if (error) {
-          toast.error(`تعذر رفع الملف ${file.name}`);
+        if (!ALLOWED_TYPES.includes(file.type)) {
+          toast.error(`نوع الملف ${file.name} غير مدعوم (PDF أو صورة فقط).`);
           continue;
         }
-        uploaded.push({ file_name: file.name, file_path: path });
+        try {
+          const content = await fileToBase64(file);
+          const saved = await uploadDoc({
+            data: { file_name: file.name, content_type: file.type, content } as never,
+          });
+          uploaded.push({ file_name: saved.file_name, file_path: saved.file_path });
+        } catch {
+          toast.error(`تعذر رفع الملف ${file.name}`);
+        }
       }
       setDocs((d) => [...d, ...uploaded]);
       if (uploaded.length) toast.success("تم رفع المستندات بنجاح.");

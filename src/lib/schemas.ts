@@ -64,3 +64,17 @@ export const updateRequestSchema = z.object({
 
 export const idSchema = z.object({ id: z.string().uuid() });
 export const pathSchema = z.object({ path: z.string().max(400) });
+
+export const ALLOWED_DOC_TYPES = [
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+] as const;
+
+export const uploadDocumentSchema = z.object({
+  file_name: z.string().trim().min(1).max(200),
+  content_type: z.enum(ALLOWED_DOC_TYPES),
+  // base64 payload, max ~10MB binary
+  content: z.string().min(1).max(14_000_000),
+});
