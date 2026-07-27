@@ -80,6 +80,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      {
+        name: "domain-verification",
+        content: "d0313daa0417c5da8b4c6846b8914d6b7b84bfa2e860117c2acc72b71dcbef2e",
+      },
       { title: "ريفانس لخدمات التعقيب | ننجز معاملاتك بسهولة واحترافية" },
       {
         name: "description",
