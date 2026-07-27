@@ -133,7 +133,7 @@ function RootShell({ children }: { children: ReactNode }) {
         {children}
         <div
           className="sbc-verify-seal"
-          data-token="c2JMbnRHQmdLZVVpTG91VXpsb2dCCdz09"
+          data-token="c2JMbnRHQmdLZVVpTG91VXpsb2dCdz09"
           data-position="bottom-left"
         />
         <script
