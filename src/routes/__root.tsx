@@ -131,6 +131,15 @@ function RootShell({ children }: { children: ReactNode }) {
       </head>
       <body>
         {children}
+        <div
+          className="sbc-verify-seal"
+          data-token="c2JMbnRHQmdLZVVpTG91VXpsb2dCCdz09"
+          data-position="bottom-left"
+        />
+        <script
+          src="https://eauthenticate.saudibusiness.gov.sa/EAuthSealApi/seal.js"
+          async
+        />
         <Scripts />
       </body>
     </html>
