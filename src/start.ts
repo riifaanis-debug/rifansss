@@ -25,7 +25,49 @@ const csrfMiddleware = createCsrfMiddleware({
   filter: (ctx) => ctx.handlerType === "serverFn",
 });
 
+// Some verification crawlers only read the very beginning of <head>.
+// Force the domain-verification meta to be the first tag inside <head>.
+const DOMAIN_VERIFICATION_META =
+  '<meta name="domain-verification" content="d0313daa0417c5da8b4c6846b8914d6b7b84bfa2e860117c2acc72b71dcbef2e">';
+
+const domainVerificationMiddleware = createMiddleware().server(async ({ next }) => {
+  const result = await next();
+  const response = (result as { response?: Response }).response ?? (result as unknown as Response);
+  if (!(response instanceof Response)) return result;
+
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.includes("text/html")) return result;
+
+  const html = await response.text();
+  const headIndex = html.indexOf("<head>");
+  if (headIndex === -1) {
+    return new Response(html, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers,
+    });
+  }
+
+  const withoutDuplicate = html.replace(
+    /<meta name="domain-verification"[^>]*>/i,
+    "",
+  );
+  const insertAt = withoutDuplicate.indexOf("<head>") + "<head>".length;
+  const patched =
+    withoutDuplicate.slice(0, insertAt) +
+    DOMAIN_VERIFICATION_META +
+    withoutDuplicate.slice(insertAt);
+
+  const headers = new Headers(response.headers);
+  headers.delete("content-length");
+  return new Response(patched, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+});
+
 export const startInstance = createStart(() => ({
   functionMiddleware: [attachSupabaseAuth],
-  requestMiddleware: [errorMiddleware, csrfMiddleware],
+  requestMiddleware: [errorMiddleware, csrfMiddleware, domainVerificationMiddleware],
 }));
