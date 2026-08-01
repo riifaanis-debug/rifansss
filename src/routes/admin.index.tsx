@@ -228,7 +228,6 @@ function RequestCard({
         {[
           ["العميل", request.full_name],
           ["نوع العميل", clientTypeLabel(request.client_type)],
-          ["الهوية", request.national_id],
           ["الجوال", request.phone],
           ["البريد", request.email || "—"],
           ["المدينة", request.city],

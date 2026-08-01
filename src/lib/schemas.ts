@@ -2,7 +2,6 @@ import { z } from "zod";
 
 export const requestSchema = z.object({
   full_name: z.string().trim().min(3).max(120),
-  national_id: z.string().trim().min(5).max(20),
   phone: z.string().trim().min(8).max(20),
   email: z.string().trim().email().max(160).optional().or(z.literal("")),
   city: z.string().trim().min(2).max(80),

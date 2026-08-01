@@ -57,7 +57,6 @@ export const submitServiceRequest = createServerFn({ method: "POST" })
         order_number: orderNumber,
         access_code: accessCode,
         full_name: data.full_name,
-        national_id: data.national_id,
         phone: data.phone,
         email: data.email || null,
         city: data.city,

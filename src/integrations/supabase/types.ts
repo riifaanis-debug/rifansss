@@ -94,7 +94,7 @@ export type Database = {
           id: string
           invoice_amount: number | null
           invoice_paid: boolean
-          national_id: string
+          national_id: string | null
           order_number: string
           phone: string
           preferred_contact: string
@@ -119,7 +119,7 @@ export type Database = {
           id?: string
           invoice_amount?: number | null
           invoice_paid?: boolean
-          national_id: string
+          national_id?: string | null
           order_number: string
           phone: string
           preferred_contact?: string
@@ -144,7 +144,7 @@ export type Database = {
           id?: string
           invoice_amount?: number | null
           invoice_paid?: boolean
-          national_id?: string
+          national_id?: string | null
           order_number?: string
           phone?: string
           preferred_contact?: string
