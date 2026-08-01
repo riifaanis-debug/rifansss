@@ -22,7 +22,6 @@ export const Route = createFileRoute("/admin/login")({
 
 function AdminLogin() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -31,20 +30,9 @@ function AdminLogin() {
     e.preventDefault();
     setLoading(true);
     try {
-      if (mode === "signin") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        navigate({ to: "/admin" });
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: `${window.location.origin}/admin` },
-        });
-        if (error) throw error;
-        toast.success("تم إنشاء الحساب. يمكنك تسجيل الدخول الآن.");
-        setMode("signin");
-      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      navigate({ to: "/admin" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "تعذر إتمام العملية");
     } finally {
@@ -68,15 +56,11 @@ function AdminLogin() {
             </div>
           </div>
           <Button type="submit" variant="hero" size="lg" className="mt-6 w-full" disabled={loading}>
-            {loading ? "جارٍ المعالجة..." : mode === "signin" ? "تسجيل الدخول" : "إنشاء حساب"}
+            {loading ? "جارٍ المعالجة..." : "تسجيل الدخول"}
           </Button>
-          <button
-            type="button"
-            className="mt-4 w-full text-center text-xs text-muted-foreground hover:text-primary"
-            onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-          >
-            {mode === "signin" ? "إنشاء حساب جديد لفريق العمل" : "لدي حساب بالفعل"}
-          </button>
+          <p className="mt-4 text-center text-xs text-muted-foreground">
+            حسابات الإدارة تُنشأ من قبل مسؤول النظام فقط.
+          </p>
         </form>
       </Section>
     </>

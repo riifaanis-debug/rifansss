@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { PageHeader, Section } from "@/components/site/Bits";
 import { servicesQueryOptions } from "@/lib/services-query";
-import { submitServiceRequest, uploadRequestDocument } from "@/lib/site.functions";
+import { submitServiceRequest } from "@/lib/site.functions";
 import { CLIENT_TYPES, CONTACT_METHODS } from "@/lib/statuses";
 
 const ALLOWED_TYPES = ["application/pdf", "image/jpeg", "image/png", "image/webp"];
@@ -52,14 +52,13 @@ export const Route = createFileRoute("/request")({
   component: RequestPage,
 });
 
-type Doc = { file_name: string; file_path: string };
+type Doc = { id: string; file_name: string; content_type: string; content: string };
 
 function RequestPage() {
   const { service } = Route.useSearch();
   const navigate = useNavigate();
   const { data: services } = useSuspenseQuery(servicesQueryOptions);
   const submit = useServerFn(submitServiceRequest);
-  const uploadDoc = useServerFn(uploadRequestDocument);
 
   const [form, setForm] = useState({
     full_name: "",
@@ -86,7 +85,7 @@ function RequestPage() {
     setUploading(true);
     try {
       const uploaded: Doc[] = [];
-      for (const file of Array.from(files).slice(0, 10 - docs.length)) {
+      for (const file of Array.from(files).slice(0, 5 - docs.length)) {
         if (file.size > 10 * 1024 * 1024) {
           toast.error(`حجم الملف ${file.name} يتجاوز 10 ميجابايت.`);
           continue;
@@ -97,16 +96,18 @@ function RequestPage() {
         }
         try {
           const content = await fileToBase64(file);
-          const saved = await uploadDoc({
-            data: { file_name: file.name, content_type: file.type, content } as never,
+          uploaded.push({
+            id: crypto.randomUUID(),
+            file_name: file.name.slice(0, 200),
+            content_type: file.type,
+            content,
           });
-          uploaded.push({ file_name: saved.file_name, file_path: saved.file_path });
         } catch {
-          toast.error(`تعذر رفع الملف ${file.name}`);
+          toast.error(`تعذر قراءة الملف ${file.name}`);
         }
       }
       setDocs((d) => [...d, ...uploaded]);
-      if (uploaded.length) toast.success("تم رفع المستندات بنجاح.");
+      if (uploaded.length) toast.success("تم إرفاق المستندات، وسيتم رفعها عند إرسال الطلب.");
     } finally {
       setUploading(false);
     }
@@ -118,7 +119,16 @@ function RequestPage() {
     if (!agree) return toast.error("يرجى الموافقة على الشروط وسياسة الخصوصية.");
     setSending(true);
     try {
-      const res = await submit({ data: { ...form, documents: docs } as never });
+      const res = await submit({
+        data: {
+          ...form,
+          documents: docs.map(({ file_name, content_type, content }) => ({
+            file_name,
+            content_type,
+            content,
+          })),
+        } as never,
+      });
       setResult(res);
       toast.success("تم استلام طلبك لدى ريفانس بنجاح، وسيتم التواصل معك بعد مراجعة البيانات.");
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -251,14 +261,14 @@ function RequestPage() {
                 <ul className="space-y-2">
                   {docs.map((d) => (
                     <li
-                      key={d.file_path}
+                      key={d.id}
                       className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2 text-sm"
                     >
                       <span className="truncate">{d.file_name}</span>
                       <button
                         type="button"
                         aria-label="حذف الملف"
-                        onClick={() => setDocs((x) => x.filter((f) => f.file_path !== d.file_path))}
+                        onClick={() => setDocs((x) => x.filter((f) => f.id !== d.id))}
                       >
                         <X className="size-4 text-muted-foreground" />
                       </button>
