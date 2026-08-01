@@ -63,7 +63,6 @@ function RequestPage() {
 
   const [form, setForm] = useState({
     full_name: "",
-    national_id: "",
     phone: "",
     email: "",
     city: "",
@@ -181,7 +180,6 @@ function RequestPage() {
         <form onSubmit={onSubmit} className="rounded-2xl border border-border bg-card p-6 shadow-soft">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="الاسم الكامل" id="full_name" value={form.full_name} onChange={set("full_name")} required />
-            <Field label="رقم الهوية أو الإقامة" id="national_id" value={form.national_id} onChange={set("national_id")} required />
             <Field label="رقم الجوال" id="phone" value={form.phone} onChange={set("phone")} required />
             <Field label="البريد الإلكتروني" id="email" type="email" value={form.email} onChange={set("email")} />
             <Field label="المدينة" id="city" value={form.city} onChange={set("city")} required />
