@@ -12,8 +12,19 @@ export const requestSchema = z.object({
   details: z.string().trim().max(2000).optional().or(z.literal("")),
   preferred_contact: z.enum(["phone", "whatsapp", "email"]),
   documents: z
-    .array(z.object({ file_name: z.string().max(200), file_path: z.string().max(400) }))
-    .max(10)
+    .array(
+      z.object({
+        file_name: z.string().trim().min(1).max(200),
+        content_type: z.enum([
+          "application/pdf",
+          "image/jpeg",
+          "image/png",
+          "image/webp",
+        ]),
+        content: z.string().min(1).max(14_000_000),
+      }),
+    )
+    .max(5)
     .default([]),
 });
 
@@ -70,10 +81,3 @@ export const ALLOWED_DOC_TYPES = [
   "image/png",
   "image/webp",
 ] as const;
-
-export const uploadDocumentSchema = z.object({
-  file_name: z.string().trim().min(1).max(200),
-  content_type: z.enum(ALLOWED_DOC_TYPES),
-  // base64 payload, max ~10MB binary
-  content: z.string().min(1).max(14_000_000),
-});
