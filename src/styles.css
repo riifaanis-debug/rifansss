@@ -150,6 +150,13 @@
     color: var(--color-foreground);
     font-family: "Cairo", system-ui, sans-serif;
   }
+
+  /* تصغير المقاسات على شاشات الجوال */
+  @media (max-width: 640px) {
+    html {
+      font-size: 13.5px;
+    }
+  }
 }
 
 @utility surface-royal {
