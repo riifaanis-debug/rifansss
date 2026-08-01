@@ -1,0 +1,1 @@
+ALTER TABLE public.service_requests ALTER COLUMN national_id DROP NOT NULL;
