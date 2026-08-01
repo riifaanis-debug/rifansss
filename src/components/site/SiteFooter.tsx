@@ -109,7 +109,7 @@ export function SiteFooter() {
         </div>
       </div>
 
-      <div className="border-t border-gold/20 py-5 text-center text-xs text-primary-foreground/70">
+      <div className="border-t border-gold/20 py-4 text-right text-[0.7rem] text-primary-foreground/70 md:text-xs">
         © 2026 ريفانس. جميع الحقوق محفوظة.
       </div>
     </footer>
