@@ -1,27 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requestSchema, contactSchema, trackSchema, uploadDocumentSchema } from "@/lib/schemas";
+import { requestSchema, contactSchema, trackSchema } from "@/lib/schemas";
 
-export const uploadRequestDocument = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => uploadDocumentSchema.parse(data))
-  .handler(async ({ data }) => {
-    const bytes = Buffer.from(data.content, "base64");
-    if (bytes.length === 0 || bytes.length > 10 * 1024 * 1024) {
-      throw new Error("حجم الملف غير مقبول");
-    }
-    const extByType: Record<string, string> = {
-      "application/pdf": "pdf",
-      "image/jpeg": "jpg",
-      "image/png": "png",
-      "image/webp": "webp",
-    };
-    const path = `${crypto.randomUUID()}.${extByType[data.content_type]}`;
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.storage
-      .from("request-documents")
-      .upload(path, bytes, { contentType: data.content_type, upsert: false });
-    if (error) throw new Error(error.message);
-    return { file_path: path, file_name: data.file_name.slice(0, 200) };
-  });
+const EXT_BY_TYPE: Record<string, string> = {
+  "application/pdf": "pdf",
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
 
 export const listServices = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
