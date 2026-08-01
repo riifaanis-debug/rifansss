@@ -134,7 +134,7 @@ function RequestPage() {
       <>
         <PageHeader title="تم استلام طلبك" />
         <Section className="max-w-2xl">
-          <div className="rounded-2xl border border-gold/40 bg-card p-8 text-center shadow-soft">
+          <div className="rounded-2xl border border-gold/40 bg-card p-5 text-center shadow-soft md:p-8">
             <CheckCircle2 className="mx-auto size-12 text-gold" />
             <p className="mt-4 text-sm leading-8 text-foreground">
               تم استلام طلبك لدى ريفانس بنجاح، وسيتم التواصل معك بعد مراجعة البيانات.
@@ -177,8 +177,11 @@ function RequestPage() {
         sub="عبّئ بيانات الطلب وارفق المستندات، وسيتواصل معك فريق ريفانس بعد المراجعة."
       />
       <Section className="max-w-3xl">
-        <form onSubmit={onSubmit} className="rounded-2xl border border-border bg-card p-6 shadow-soft">
-          <div className="grid gap-4 sm:grid-cols-2">
+        <form
+          onSubmit={onSubmit}
+          className="rounded-2xl border border-border bg-card p-4 text-right shadow-soft md:p-6"
+        >
+          <div className="grid gap-3 sm:grid-cols-2 md:gap-4">
             <Field label="الاسم الكامل" id="full_name" value={form.full_name} onChange={set("full_name")} required />
             <Field label="رقم الجوال" id="phone" value={form.phone} onChange={set("phone")} required />
             <Field label="البريد الإلكتروني" id="email" type="email" value={form.email} onChange={set("email")} />

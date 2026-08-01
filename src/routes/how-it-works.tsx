@@ -38,7 +38,7 @@ function HowItWorksPage() {
             </li>
           ))}
         </ol>
-        <div className="mt-10 text-center">
+        <div className="mt-8 text-right">
           <Button asChild variant="hero" size="lg">
             <Link to="/request">اطلب خدمتك</Link>
           </Button>
