@@ -57,14 +57,23 @@ export const submitServiceRequest = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
 
-    if (data.documents.length) {
-      await supabaseAdmin.from("request_documents").insert(
-        data.documents.map((d) => ({
-          request_id: inserted.id,
-          file_name: d.file_name,
-          file_path: d.file_path,
-        })),
-      );
+    const stored: { request_id: string; file_name: string; file_path: string }[] = [];
+    for (const doc of data.documents) {
+      const bytes = Buffer.from(doc.content, "base64");
+      if (bytes.length === 0 || bytes.length > 10 * 1024 * 1024) continue;
+      const path = `${inserted.id}/${crypto.randomUUID()}.${EXT_BY_TYPE[doc.content_type]}`;
+      const { error: uploadError } = await supabaseAdmin.storage
+        .from("request-documents")
+        .upload(path, bytes, { contentType: doc.content_type, upsert: false });
+      if (uploadError) continue;
+      stored.push({
+        request_id: inserted.id,
+        file_name: doc.file_name.slice(0, 200),
+        file_path: path,
+      });
+    }
+    if (stored.length) {
+      await supabaseAdmin.from("request_documents").insert(stored);
     }
 
     return { order_number: inserted.order_number, access_code: accessCode };
