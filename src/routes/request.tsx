@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { z } from "zod";
 import { useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -32,6 +33,10 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
+const requestSearchSchema = z.object({
+  service: z.string().optional(),
+});
+
 export const Route = createFileRoute("/request")({
   head: () => ({
     meta: [
@@ -45,9 +50,7 @@ export const Route = createFileRoute("/request")({
       { property: "og:description", content: "نموذج طلب خدمات التعقيب وإنجاز المعاملات." },
     ],
   }),
-  validateSearch: (search: Record<string, unknown>) => ({
-    service: typeof search.service === "string" ? search.service : undefined,
-  }),
+  validateSearch: requestSearchSchema,
   loader: ({ context }) => context.queryClient.ensureQueryData(servicesQueryOptions),
   component: RequestPage,
 });
