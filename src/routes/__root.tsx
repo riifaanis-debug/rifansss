@@ -123,10 +123,6 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="ar" dir="rtl">
       <head>
-        <meta
-          name="domain-verification"
-          content="a2822b2d056f31251f463b7f6b2f20ab73eda6443883046ac9e8cf1168465bd9"
-        />
         <HeadContent />
       </head>
       <body>
